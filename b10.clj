@@ -98,10 +98,12 @@
   )
 
                                         ;Control synths
-(defsynth sin-out [freq 1 out-control-bus 0]
-  (out:kr out-control-bus (+ (in:kr freq) (sin-osc:kr (in:kr freq)))))
+(defsynth sin-out [freq1 1 freq2 1 scaler 1 out-control-bus 0]
+  (out:kr out-control-bus (+ (in:kr freq1) (* scaler (sin-osc:kr freq2)) )))
 
-(def sin-out_1 (sin-out [:head early-g] cbus5 cbus6))
+(def sin-out_1 (sin-out [:tail early-g] :freq1 cbus5 :freq2 1 :scaler 5 :out-control-bus cbus6))
+
+(ctl sin-out_1 :freq2 2 :scaler 1)
 
 (kill sin-out_1)
                                     ;Synths
@@ -112,13 +114,13 @@
         src (sin-osc freq_in phase_in 0)]
     (out out-bus (* amp_in src))))
 
-(def sin-wave_1 (sin-wave [:head early-g] :amp cbus1 :freq cbus2 :phase cbus3 :out-bus abus1))
+(def sin-wave_1 (sin-wave [:tail early-g] :amp cbus1 :freq cbus2 :phase cbus3 :out-bus abus1))
 
 (def sin-wave_2 (sin-wave [:tail early-g] :amp cbus4 :freq cbus6 :phase 0 :out-bus abus2))
 
-(ctl sin-wave_2 :phase cbus6 :freq cbus6)
+(ctl sin-wave_2 :phase 0 :freq cbus6)
 
-(kill sin-wave_1)
+(kill sin-wave_2)
 
 (control-bus-set! cbus1 1)
 
