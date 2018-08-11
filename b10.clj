@@ -124,13 +124,15 @@
 
 (control-bus-set! cbus1 1)
 
-(control-bus-set! cbus2 100)
+(control-bus-set! cbus2 50)
 
-(control-bus-set! cbus4 1.0)
+(control-bus-set! cbus3 0)
+
+(control-bus-set! cbus4 0.5)
 
 (control-bus-set! cbus6 (* Math/PI 0.0))
 
-(control-bus-set! cbus5 100)
+(control-bus-set! cbus5 55)
 
 (control-bus-get cbus6)
 
@@ -140,8 +142,11 @@
 
 (kill 85)
 
-(defsynth mixer [in-bus1 0 in-bus2 0 amp 1]
-  (out 0 (pan2 (*  (+ (in in-bus1) (in in-bus2))  amp))))
+(defsynth mixer [in-bus1 0 in-bus2 0 amp 1] (let
+                                                [in1 (in in-bus1)
+                                                 in2 (in in-bus2)
+                                                 comp (compander in1 in2 0.5 0.5 0.8 0.01 0.01)]
+                                                (out 0 (pan2 (* comp   amp)))))
 
 (def mixer1 (mixer [:tail early-g] abus1 abus2 1))
 
