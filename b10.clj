@@ -147,9 +147,10 @@
 (kill 53)
 
 (ctl b-trg :div 2)
+(ctl r-trg :rate 12)
 
 (defsynth buffSynth [out-bus 0 fraction 1 note-buf 0 beat-bus 0 beat-trg-bus 0
-                     amp 1 attack 0.1 sustain 0.1 release 0.1]
+                     amp 1 attack 0.04 sustain 0.1 release 0.5]
   (let [cnt (in:kr beat-bus)
         trg (pulse-divider (in:kr beat-trg-bus) fraction)
         note (buf-rd:kr 1 note-buf cnt)
@@ -159,7 +160,7 @@
         env (env-gen (perc :attack attack :sustain sustain :release release) :gate pls)
         trg2 0
         src (lpf (mix [(saw (* 0.25 freq)) (sin-osc (* 1.01 freq))]))
-        src2 (pan2 (* amp env src))]
+        src2 (* amp env src)]
     (out out-bus (* src2))))
 
 
@@ -167,14 +168,16 @@
 
 (buffer-write! buffer-8-2 [100 90 80 70 60 50 40 30])
 
-(buffer-write! buffer-16-1 [100 80 60 70 50 60 40 50
+(buffer-write! buffer-16-1 [80 100 60 70 50 60 40 50
                             50 40 60 50 70 50 70 50])
+
+(buffer-write! buffer-8-3 [55 45 50 45 50 45 50 45])
 
 (def buffSynth_1 (buffSynth [:head early-g] :out-bus abus3
                             :fraction 1
                             :note-buf buffer-8-1
-                            :beat-trg-bus root-trg-bus
-                            :beat-bus root-cnt-bus ))
+                            :beat-trg-bus beat-trg-bus
+                            :beat-bus beat-cnt-bus ))
 
 (ctl buffSynth_1
      :note-buf buffer-16-1
@@ -203,10 +206,10 @@
         sp2 (sin-osc (* note 1.1))
         sp3 (sin-osc (* note 0.9))
         sp4 (* sp1 sp2 sp3 )]
-    (out out-bus (clip2 (pan2 (* amp sp4 env2)) 1))))
+    (out out-bus (clip2 (* amp sp4 env2) 1))))
 
-(def dualPulse_1 (dualPulse [:tail early-g]
-                            :out-bus abus4
+(def dualPulse_1 (dualPulse [:head early-g]
+                            :out-bus abus5
                             :note 18
                             :amp 1
                             :fraction 1
@@ -224,24 +227,70 @@
 
 (kill dualPulse_1)
 
+(pp-node-tree)
 
-(defsynth mixer [in-bus1 0 amp1 1 in-bus2 0 amp2 1 in-bus3 0 amp3 1 in-bus4 0 amp4 1] (let
+(buffer-write! buffer-16-3 [0 0 0 0 1 0 0 0
+                            0 0 0 0 1 0 0 0])
+
+(defsynth snare [amp 30 fraction 2 del 0 in-trg-bus 0 in-bus-ctr 0 beat-buf 0 out-bus 0]
+  (let [tr-in (pulse-divider (in:kr in-trg-bus) fraction)
+        ctr-in (in:kr in-bus-ctr)
+        pulses (buf-rd:kr 1 beat-buf ctr-in)
+        pls (* tr-in pulses)
+        env (linen (impulse 0 0.05) 0.01 0.01 0.05 :gate pls)
+        snare (* 3 (pink-noise) (apply + (* (decay env [0.05 0.01]) [1 0.05])))
+        snare (+ snare (bpf (* 4 snare) 2000))
+        snare (clip2 snare 1)]
+    (out out-bus (* amp snare env))))
+
+(def snare_1 (snare [:head early-g]
+              :amp 30
+              :fraction 1
+              :del 0
+              :in-trg-bus root-trg-bus
+              :in-bus-ctr root-cnt-bus
+              :beat-buf buffer-16-3
+              :out-bus abus4))
+
+(kill snare_1)
+
+(pp-node-tree)
+
+(kill 111)
+
+(defsynth mixer [in-bus1 0 amp1 1
+                 in-bus2 0 amp2 1
+                 in-bus3 0 amp3 1
+                 in-bus4 0 amp4 1
+                 in-bus5 0 amp5 1](let
                                                 [in1 (in in-bus1)
                                                  in2 (in in-bus2)
                                                  in3 (in in-bus3)
                                                  in4 (in in-bus4)
+                                                 in5 (in in-bus5)
                                                  in1a (* amp1 in1)
                                                  in2a (* amp2 in2)
                                                  in3a (* amp3 in3)
                                                  in4a (* amp4 in4)
-                                                 src (+ in1a in2a in3a in4a)]
+                                                 in5a (* amp5 in5)
+                                                 src (+ in1a in2a in3a in4a in5a)]
                                                 (out 0 (pan2 src))))
 
 
 
 
-(def mixer1 (mixer [:tail early-g] abus1 1 abus2 1 abus3 1 abus4 1))
+(def mixer1 (mixer [:tail early-g] abus1 1 abus2 1 abus3 1 abus4 1 abus5 1))
 
-(ctl mixer1 :in-bus1 abus1 :in-bus2 abus2 :in-bus4 abus3 :in-bus4 abus5 :amp4 2.00 :amp1 0.01 :amp2 0.01 :amp3 0.3)
+(ctl mixer1
+     :in-bus1 abus1
+     :in-bus2 abus2
+     :in-bus4 abus3
+     :in-bus4 abus4
+     :in-bus5 abus5
+     :amp4 0.24
+     :amp1 0.1
+     :amp2 0.1
+     :amp3 0.23
+     :amp5 3)
 
 (kill mixer1)
