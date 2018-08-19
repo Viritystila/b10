@@ -1,5 +1,6 @@
 (ns b10 (:use [overtone.live]) (:require [shadertone.tone :as t]) )
 
+
 (do
   ;Global pulses
   (do
@@ -97,13 +98,18 @@
     (defonce buffer-32-4 (buffer 32))
   )
 
-                                        ;Control synths
+(stop)
+
+(pp-node-tree)
+                                         ;Control synths
 (defsynth sin-out [freq1 1 freq2 1 scaler 1 out-control-bus 0]
   (out:kr out-control-bus (+ (in:kr freq1) (* scaler (sin-osc:kr freq2)) )))
 
 (def sin-out_1 (sin-out [:tail early-g] :freq1 cbus5 :freq2 1 :scaler 5 :out-control-bus cbus6))
 
 (ctl sin-out_1 :freq2 2 :scaler 1)
+
+(kill 59)
 
 (kill sin-out_1)
                                     ;Synths
@@ -120,7 +126,7 @@
 
 (ctl sin-wave_2 :phase 0 :freq cbus6)
 
-(kill sin-wave_2)
+(kill sin-wave_1)
 
 (control-bus-set! cbus1 1)
 
@@ -138,19 +144,84 @@
 
 (pp-node-tree)
 
+(kill 53)
+
+(defsynth buffSynth [out-bus 0 note-buf 0 beat-bus 0 beat-trg-bus 0
+                     amp 1 attack 0.1 sustain 0.1 release 0.1]
+  (let [cnt (in:kr beat-bus)
+        trg (in:kr beat-trg-bus)
+        note (buf-rd:kr 1 note-buf cnt)
+        freq (midicps note)
+        vol (> note 0)
+        env (env-gen (perc :attack attack :sustain sustain :release release) :gate trg)
+        trg2 0
+        src (lpf (mix [(saw (* 0.25 freq)) (sin-osc (* 1.01 freq))]))
+        src2 (pan2 (* amp env src vol))]
+    (out out-bus (* src2))))
 
 
-(kill 85)
+(buffer-write! buffer-8-1 [50 30 80 20 70 0 0 0])
 
-(defsynth mixer [in-bus1 0 in-bus2 0 amp 1] (let
+(buffer-write! buffer-8-2 [100 90 80 70 60 50 40 30])
+
+(buffer-write! buffer-16-1 [70 80 60 70 50 60 40 50
+                            50 40 60 50 70 60 80 70])
+
+(def buffSynth_1 (buffSynth [:head early-g] :out-bus abus3 :note-buf buffer-8-1 :beat-trg-bus root-trg-bus :beat-bus root-cnt-bus ))
+
+(ctl buffSynth_1 :note-buf buffer-16-1 :beat-trg-bus root-trg-bus :beat-bus root-cnt-bus :attack 0.04 :release 0.05 :release 0.1 :amp 0.8)
+
+(kill buffSynth_1)
+
+(pp-node-tree)
+
+(buffer-write! buffer-16-2 [1 0 0 0 0 0 0 1
+                            1 0 0 0 0 0 0 1])
+
+(defsynth dualPulse [note 22 amp 1 fraction 1 in-bus 0 in-bus-ctr 0 beat-buf 0 attack 0.1 decay 0.1 sustain 0.2 release 1 del 0.0]
+  (let [tr-in (pulse-divider (in:kr in-bus) fraction)
+        ctr-in (in:kr in-bus-ctr)
+        pulses (buf-rd:kr 1 beat-buf ctr-in)
+        pls    (* tr-in pulses)
+        env2 (env-gen (perc attack release) :gate pls)
+        vol (> pulses 0)
+        sp1 (sin-osc note)
+        sp2 (sin-osc (* note 1.1))
+        sp3 (sin-osc (* note 0.9))
+        sp4 (* sp1 sp2 sp3 )]
+    (out 0 (clip2 (pan2 (* amp sp4 env2)) 1))))
+
+(def dualPulse_1 (dualPulse [:tail early-g]
+                            :note 18
+                            :amp 1
+                            :fraction 1
+                            :in-bus root-trg-bus
+                            :in-bus-ctr root-cnt-bus
+                            :beat-buf buffer-16-2
+                            :attack 0.1
+                            :decay 0.1
+                            :sustain 0.1
+                            :release 0.5
+                            :del 0.0
+                            ))
+
+(ctl dualPulse_1 :fraction 0 :attack 0.1 :sustain 0.1 :release 0.5 :note 18 :amp 1)
+
+(kill dualPulse_1)
+
+
+(defsynth mixer [in-bus1 0 in-bus2 0 in-bus3 0 amp 1] (let
                                                 [in1 (in in-bus1)
                                                  in2 (in in-bus2)
-                                                 comp (compander in1 in2 0.5 0.5 0.8 0.01 0.01)]
-                                                (out 0 (pan2 (* comp   amp)))))
+                                                 in3 (in in-bus3)
+                                                 comp (compander in1 in2 0.5 0.5 0.8 0.01 0.01)
+                                                 src (+ comp in3)]
+                                                (out 0 (pan2 (* src   amp)))))
 
-(def mixer1 (mixer [:tail early-g] abus1 abus2 1))
 
-(stop)
 
-(kill 47)
+
+(def mixer1 (mixer [:tail early-g] abus1 abus2 abus3 1))
+
+
 (kill mixer1)
