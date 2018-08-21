@@ -181,6 +181,7 @@
 
 
 
+
   (ctl buffSynth_1
        :note-buf buffer-32-1
        :fraction 1
@@ -229,7 +230,7 @@
 
   (ctl dualPulse_1 :out-bus abus5 :fraction 1 :attack 0.1 :sustain 0.1 :release 0.5 :note 18 :amp 1)
 
-  (kill dualPulse_1)
+  ;(kill dualPulse_1)
 
   (pp-node-tree)
 
@@ -306,7 +307,7 @@
 
 (def v1rh (t/get-video-histogram 0 :red))
 
-(t/set-video-frame-limits 0  51000 52000)
+(t/set-video-frame-limits 2  51000 52000)
 
 ch
 
