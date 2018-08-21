@@ -155,6 +155,7 @@
           trg2 0
           src (lpf (mix [(saw (* 0.25 freq)) (sin-osc (* 1.01 freq))]))
           src2 (* amp env src)]
+      (out:kr cbus7 note)
       (out out-bus (* src2))))
 
 
@@ -172,13 +173,13 @@
                               80 100 90 60 70 60 50 40
                               50 40 40 50 50 40 40 50])
 
-  (def buffSynth_2  (buffSynth [:head early-g] :out-bus abus3
+  (def buffSynth_1  (buffSynth [:head early-g] :out-bus abus3
                               :fraction 1
                               :note-buf buffer-8-2
                               :beat-trg-bus beat-trg-bus
                               :beat-bus beat-cnt-bus ))
 
-  (kill buffSynth_2)
+
 
   (ctl buffSynth_1
        :note-buf buffer-32-1
@@ -192,8 +193,10 @@
 
   (pp-node-tree)
 
-  (buffer-write! buffer-16-2 [1 0 0 0 0 0 0 0
-                              1 0 0 0 0 0 0 0]))
+  (buffer-write! buffer-16-2 [1 1 0 0 0 0 0 0
+                              1 0 0 0 0 0 0 0])
+
+  )
 
 (do
   (defsynth dualPulse [out-bus 0 note 22 amp 1 fraction 1 in-bus 0 in-bus-ctr 0 beat-buf 0 attack 0.1 decay 0.1 sustain 0.2 release 1 del 0.0]
@@ -297,5 +300,30 @@
 
 (kill mixer1)
 
+
+                                        ;Video
+(def ch (t/get-cam-histogram 0 :red))
+
+(def v1rh (t/get-video-histogram 0 :red))
+
+(t/set-video-frame-limits 0  51000 52000)
+
+ch
+
+(t/toggle-analysis 0 false :histogram)
+
+(def cb (control-bus-get cbus7))
+
+(nth cb 0)
+
+
+(t/start "./b10.glsl" :width 1920 :height 1080 :cams [0 1] :videos ["../videos/jkl.mp4" "../videos/metro.mp4" "../videos/spede.mp4"])
+
+(add-watch ch :ch (fn [_ _ old new]
+                    (let  [])
+                    (t/set-dataArray-item 0 (nth (control-bus-get cbus7) 0))
+
+                    )
+           )
 
 (stop)
