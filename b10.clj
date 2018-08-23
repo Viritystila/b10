@@ -246,7 +246,7 @@
   (buffer-write! buffer-32-4 [0 0 0 0 1 0 0 0
                               0 0 0 0 1 0 0 0
                               0 0 1 0 1 0 1 0
-                              0 0 0 0 1 0 0 0])
+                              0 0 0 0 1 0 1 0])
 
   (defsynth snare [amp 30
                    fraction 2
@@ -283,7 +283,16 @@
 
   )
 
+(defsynth pad [note 60 amp 0.7 attack 0.001 release 30.1]
+  (let [freq (midicps note)
+        env (env-gen (perc attack release) :action FREE)
+        f-env (+ freq (* 10 freq (env-gen (perc 0.012 (- release 0.01)))))
+        bfreq (/ freq 2)
+        sig (apply - (concat (* 0.7 (sin-osc [bfreq (* 0.99 bfreq)])) (lpf (saw [freq (* freq 1.01)]) f-env)))
+        ]
+        (out 0 (pan2 (* amp env sig)))))
 
+(def pad_1 (pad))
 
 (pp-node-tree)
 
