@@ -144,7 +144,8 @@
 
 (do
   (defsynth buffSynth [out-bus 0 fraction 1 note-buf 0 beat-bus 0 beat-trg-bus 0
-                       amp 1 attack 0.04 sustain 0.1 release 0.5]
+                       amp 1 attack 0.04 sustain 0.1 release 0.5
+                       factor1 0.25 factor2 1.01]
     (let [cnt (in:kr beat-bus)
           trg (pulse-divider (in:kr beat-trg-bus) fraction)
           note (buf-rd:kr 1 note-buf cnt)
@@ -152,8 +153,7 @@
           vol (> note 0)
           pls (* vol trg)
           env (env-gen (perc :attack attack :sustain sustain :release release) :gate pls)
-          trg2 0
-          src (lpf (mix [(saw (* 0.25 freq)) (sin-osc (* 1.01 freq))]))
+          src (lpf (mix [(saw (* factor1 freq)) (sin-osc (* factor2 freq))]))
           src2 (* amp env src)]
       (out:kr cbus7 note)
       (out out-bus (* src2))))
@@ -173,12 +173,16 @@
                               80 100 90 60 70 60 50 40
                               50 40 40 50 50 40 40 50])
 
+  (buffer-write! buffer-32-2 [45 35 55 65 55 65 75 85
+                              65 65 65 65 55 55 55 55
+                              85 65 45 35 55 75 95 105
+                              100 95 90 85 80 75 70 65])
+
   (def buffSynth_1  (buffSynth [:head early-g] :out-bus abus3
                               :fraction 1
                               :note-buf buffer-8-2
                               :beat-trg-bus beat-trg-bus
                               :beat-bus beat-cnt-bus ))
-
 
 
 
@@ -188,7 +192,9 @@
        :beat-trg-bus beat-trg-bus
        :beat-bus beat-cnt-bus
        :attack 0.04
-       :release 0.5
+       :release 0.8
+       :factor1 0.25
+       :factor2 1.01
        :amp 0.8)
 
 
@@ -234,11 +240,24 @@
 
   (pp-node-tree)
 
-  (buffer-write! buffer-16-3 [0 0 0 0 1 0 0 0
+  (buffer-write! buffer-16-3 [0 0 1 0 1 0 1 0
+                              0 0 0 0 1 0 1 0])
+
+  (buffer-write! buffer-32-4 [0 0 0 0 1 0 0 0
+                              0 0 0 0 1 0 0 0
+                              0 0 1 0 1 0 1 0
                               0 0 0 0 1 0 0 0])
 
-  (defsynth snare [amp 30 fraction 2 del 0 in-trg-bus 0 in-bus-ctr 0 beat-buf 0 out-bus 0]
+  (defsynth snare [amp 30
+                   fraction 2
+                   del 0
+                   in-trg-bus 0
+                   in-bus-ctr 0
+                   beat-buf 0
+                   out-bus 0
+                   del 0]
     (let [tr-in (pulse-divider (in:kr in-trg-bus) fraction)
+          tr-in (t-delay:kr tr-in del)
           ctr-in (in:kr in-bus-ctr)
           pulses (buf-rd:kr 1 beat-buf ctr-in)
           pls (* tr-in pulses)
@@ -255,7 +274,16 @@
                       :in-trg-bus root-trg-bus
                       :in-bus-ctr root-cnt-bus
                       :beat-buf buffer-16-3
-                      :out-bus abus4)))
+                      :out-bus abus4
+                      :del 0))
+
+  (ctl snare_1 :del 0.00 :beat-buf buffer-32-4)
+
+  (kill 61)
+
+  )
+
+
 
 (pp-node-tree)
 
