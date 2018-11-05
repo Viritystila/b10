@@ -279,7 +279,7 @@
 
   (ctl snare_1 :del 0.00 :beat-buf buffer-32-4)
 
-  (kill 61)
+
 
   )
 
@@ -295,6 +295,8 @@
 (def pad_1 (pad))
 
 (pp-node-tree)
+
+(stop)
 
 (do
   (defsynth mixer [in-bus1 0 amp1 1
