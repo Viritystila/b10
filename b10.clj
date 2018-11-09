@@ -377,7 +377,7 @@ ch
 
 (t/set-video-play 2)
 
-(defonce root-cnt-bus-atom_1 (bus-monitor root-trg-bus))
+(defonce root-cnt-bus-atom_1 (bus-monitor root-cnt-bus))
 
 (defonce root-cnt-bus-atom_2 (bus-monitor root-cnt-bus))
 
@@ -393,21 +393,36 @@ root-cnt-bus-atom_2
 
 beat-cnt-bus-atom_1
 
-(def frameset [ 2 3 200 100 50 30 40 50 60 40 50 60 70 100 120 110 170 180 190])
+(def frameset [2 3 200 100 50 30 40 50 60 40 50 60 70 100 120 110
+               170 180 190 100 90 80 70 60 50 40 30 20 10 0 1 50 ])
+
+
+(count frameset)
 
 (def frameset [30 40])
 
+(def frameset [120 130 140])
+
 (add-watch root-cnt-bus-atom_2 :cnt (fn [_ _ old new]
                                     (let [])
-                                    (t/set-dataArray-item 0 (nth (control-bus-get cbus7) 0))
+                                      (t/set-dataArray-item 0 (Math/pow (nth (control-bus-get cbus7) 0) 1.05) )
                                     ;(t/set-fixed-buffer-index 2 :ff (nth (control-bus-get cbus7) 0))
                                     ;(t/set-fixed-buffer-index 2 :inc)
                                     (t/set-fixed-buffer-index 2 :ff (nth frameset (mod new (count frameset))))
-                                    ))
+                                      ;(t/set-fixed-buffer-index 2 :ff (int (+ 100 (* 100 (Math/sin (mod new 3.14))))))
 
-(keys (:watches (bean root-cnt-bus-atom_1)))
+                                      ))
+
+(Math/pow 1 2)
+
+(int -1)
+
+(keys (:watches (bean root-cnt-bus-atom_2)))
 
 (remove-watch root-cnt-bus-atom_2 :cnt)
+
+
+
 
 
 (t/set-fixed-buffer-index 2 :ff 20)
