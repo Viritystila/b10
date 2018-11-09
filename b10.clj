@@ -145,11 +145,13 @@
 (do
   (defsynth buffSynth [out-bus 0 fraction 1 note-buf 0 beat-bus 0 beat-trg-bus 0
                        amp 1 attack 0.04 sustain 0.1 release 0.5
-                       factor1 0.25 factor2 1.01]
+                       factor1 0.25 factor2 1.01 pnf 500]
     (let [cnt (in:kr beat-bus)
           trg (pulse-divider (in:kr beat-trg-bus) fraction)
           note (buf-rd:kr 1 note-buf cnt)
           freq (midicps note)
+          ssas (pink-noise)
+          freq (+ freq (* pnf ssas))
           vol (> note 0)
           pls (* vol trg)
           env (env-gen (perc :attack attack :sustain sustain :release release) :gate pls)
@@ -195,8 +197,10 @@
        :release 0.8
        :factor1 0.25
        :factor2 1.01
-       :amp 0.8)
+       :amp 0.8
+       :pnf 100)
 
+ ; (kill buffSynth_1)
 
   (pp-node-tree)
 
@@ -277,13 +281,15 @@
                       :out-bus abus4
                       :del 0))
 
+  ;(kill snare_1)
+
   (ctl snare_1 :del 0.00 :beat-buf buffer-32-4)
 
 
 
   )
 
-(defsynth pad [note 60 amp 0.7 attack 0.001 release 30.1]
+(defsynth pad [note 60 amp 0.07 attack 0.001 release 30.1]
   (let [freq (midicps note)
         env (env-gen (perc attack release) :action FREE)
         f-env (+ freq (* 10 freq (env-gen (perc 0.012 (- release 0.01)))))
@@ -296,7 +302,7 @@
 
 (pp-node-tree)
 
-(stop)
+
 
 (do
   (defsynth mixer [in-bus1 0 amp1 1
@@ -361,9 +367,50 @@ ch
 
 (add-watch ch :ch (fn [_ _ old new]
                     (let  [])
-                    (t/set-dataArray-item 0 (nth (control-bus-get cbus7) 0))
+                    (t/set-dataArray-item 0 (nth (control-bus-get cbus7) 0))))
 
-                    )
-           )
+(remove-watch ch :ch)
+
+(t/bufferSection 2 0 51000)
+
+(t/set-video-fixed 2 :static)
+
+(t/set-video-play 2)
+
+(defonce root-cnt-bus-atom_1 (bus-monitor root-trg-bus))
+
+(defonce root-cnt-bus-atom_2 (bus-monitor root-cnt-bus))
+
+(defonce beat-cnt-bus-atom_1 (bus-monitor beat-cnt-bus))
+
+(control-bus-set! beat-cnt-bus 100)
+
+(control-bus-get root-cnt-bus)
+
+(bus-monitor beat-cnt-bus)
+
+root-cnt-bus-atom_2
+
+beat-cnt-bus-atom_1
+
+(def frameset [ 2 3 200 100 50 30 40 50 60 40 50 60 70 100 120 110 170 180 190])
+
+(def frameset [30 40])
+
+(add-watch root-cnt-bus-atom_2 :cnt (fn [_ _ old new]
+                                    (let [])
+                                    (t/set-dataArray-item 0 (nth (control-bus-get cbus7) 0))
+                                    ;(t/set-fixed-buffer-index 2 :ff (nth (control-bus-get cbus7) 0))
+                                    ;(t/set-fixed-buffer-index 2 :inc)
+                                    (t/set-fixed-buffer-index 2 :ff (nth frameset (mod new (count frameset))))
+                                    ))
+
+(keys (:watches (bean root-cnt-bus-atom_1)))
+
+(remove-watch root-cnt-bus-atom_2 :cnt)
+
+
+(t/set-fixed-buffer-index 2 :ff 20)
+
 
 (stop)
